@@ -69,18 +69,20 @@ public class BookServiceImpl implements BookService {
 		return modelMapper.map(book, BookDto.class);
 	}
 
-	@Transactional(readOnly = true)
 	@Override
 	public Iterable<BookDto> findBooksByAuthor(String authorName) {
-		return bookRepository.findByAuthorsNameIgnoreCase(authorName)
+		Author author = authorRepository.findById(authorName)
+				.orElseThrow(EntityNotFoundException::new);
+		return author.getBooks().stream()
 				.map(b -> modelMapper.map(b, BookDto.class))
 				.toList();
 	}
 
-	@Transactional(readOnly = true)
 	@Override
 	public Iterable<BookDto> findBooksByPublisher(String publisherName) {
-		return bookRepository.findByPublisherPublisherName(publisherName)
+		Publisher publisher = publisherRepository.findById(publisherName)
+				.orElseThrow(EntityNotFoundException::new);
+		return publisher.getBooks().stream()
 				.map(b -> modelMapper.map(b, BookDto.class))
 				.toList();
 	}
@@ -93,18 +95,18 @@ public class BookServiceImpl implements BookService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
 	@Override
 	public Iterable<String> findPublishersByAuthor(String authorName) {
-		return publisherRepository.findPublisherByAuthor(authorName);
+		return publisherRepository.findDistinctByBooksAuthorsName(authorName)
+				.map(Publisher::getPublisherName)
+				.toList();
 	}
 
 	@Transactional
 	@Override
 	public AuthorDto removeAuthor(String authorName) {
 		Author author = authorRepository.findById(authorName).orElseThrow(EntityNotFoundException::new);
-//		bookRepository.findByAuthorsNameIgnoreCase(authorName)
-//						.forEach(b -> bookRepository.delete(b));
-		bookRepository.deleteByAuthorsName(authorName);
 		authorRepository.deleteById(authorName);
 		return modelMapper.map(author, AuthorDto.class);
 	}
